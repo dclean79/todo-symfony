@@ -1,25 +1,87 @@
+version: '3.8'
 
 services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+    # ----------------------------------------------
+    # 1. Usługa Nginx (serwer WWW)
+    # ----------------------------------------------
+    nginx:
+        image: nginx:stable-alpine
+        container_name: todo_nginx
+        ports:
+            # Mapowanie portu 8000 hosta na port 80 kontenera
+            - "8000:80"
+        volumes:
+            # Mapowanie kodu aplikacji jako tylko do odczytu (ro)
+            - ./:/var/www/symfony:ro
+            # Mapowanie naszej konfiguracji Nginx
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+        depends_on:
+            - php
+        networks:
+            - todo_network
+        restart: unless-stopped
+
+    # ----------------------------------------------
+    # 2. Usługa PHP-FPM (procesor kodu Symfony)
+    # ----------------------------------------------
+    php:
+        build:
+            context: ./docker/php
+            dockerfile: Dockerfile
+            args:
+                # Wersja PHP do użycia (można zmienić w .env)
+                PHP_VERSION: ${PHP_VERSION:-8.4}
+        container_name: todo_php
+        environment:
+            # Zmienne środowiskowe Symfony:
+            APP_ENV: ${APP_ENV:-dev}
+            # Ustawienie głównej zmiennej połączenia z bazą danych
+            DATABASE_URL: 'mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@database:3306/${MYSQL_DATABASE}'
+            # Użycie /tmp dla cache, aby uniknąć problemów z uprawnieniami wolumenu
+            SYMFONY_CACHE_DIR: /tmp/symfony/cache
+            SYMFONY_LOG_DIR: /tmp/symfony/log
+        volumes:
+            # Mapowanie kodu aplikacji jako do odczytu/zapisu (rw)
+            - ./:/var/www/symfony:rw
+        networks:
+            - todo_network
+        restart: unless-stopped
+        healthcheck:
+            # Sprawdzenie, czy PHP-FPM jest gotowe do obsługi zapytań
+            test: ["CMD", "sh", "-c", "echo 'ready' | nc 127.0.0.1 9000"]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+
+    # ----------------------------------------------
+    # 3. Usługa MySQL (baza danych)
+    # ----------------------------------------------
+    database:
+        image: mysql:${MYSQL_VERSION:-8.0}
+        container_name: todo_mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+            MYSQL_DATABASE: ${MYSQL_DATABASE:-todo_app}
+            MYSQL_USER: ${MYSQL_USER:-symfony}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-!changeMe!}
+        volumes:
+            # Trwałe dane bazy danych
+            - db_data:/var/lib/mysql
+        networks:
+            - todo_network
+        ports:
+            # Umożliwienie dostępu z hosta (np. do MySQL Workbench)
+            - "33061:3306"
+        healthcheck:
+            # Sprawdzenie gotowości bazy danych
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            timeout: 5s
+            retries: 10
+            start_period: 10s
 
 volumes:
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+    db_data:
+
+networks:
+    todo_network:
+        driver: bridge
