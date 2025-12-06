@@ -1,19 +1,30 @@
-# LOKALIZACJA: todo-symfony/docker/php/entrypoint.sh
 #!/bin/sh
 set -e
 
-# Wymuszenie zmiennych środowiskowych do katalogu /tmp
-export SYMFONY_CACHE_DIR="/tmp/symfony/cache"
-export SYMFONY_LOG_DIR="/tmp/symfony/log"
+# Przechodzimy do katalogu aplikacji, aby ścieżki względne działały poprawnie
+cd /var/www/symfony
 
-# Wymuszenie utworzenia katalogów cache i logów w /tmp
-mkdir -p "$SYMFONY_CACHE_DIR" "$SYMFONY_LOG_DIR"
-chown -R www-data:www-data /tmp/symfony
+# --- SEKCJA UPRAWNIEŃ DLA CLI (POPRAWKA CHOWN) ---
+
+# Jawne tworzenie głównych katalogów cache i logów w var/.
+# Jest to niezbędne, ponieważ są one anonimowymi wolumenami i są puste.
+mkdir -p var/cache var/log
+
+# Ustawiamy właściciela DLA CLI: Ponieważ komendy bin/console są uruchamiane przez
+# użytkownika hosta (${UID}:${GID}), musimy mu nadać pełne uprawnienia do zapisu.
+echo "Ustawiam właściciela anonimowych wolumenów var/cache i var/log na użytkownika hosta (${UID}:${GID})."
+chown -R ${UID}:${GID} var/cache var/log
+
+# --- Wstępne czyszczenie i rozgrzewanie cache jako www-data ---
+echo "Wstępne czyszczenie i rozgrzewanie cache jako www-data..."
+gosu www-data php bin/console cache:clear --no-warmup || true
+gosu www-data php bin/console cache:warmup || true
+echo "Cache został rozgrzany w var/cache."
+# ----------------------------------------------------------------------
 
 # Uruchomienie "composer install" (jeśli pominięto w Dockerfile)
 if [ ! -d "vendor" ]; then
     echo "Brak katalogu vendor. Instaluję zależności..."
-    # Używamy gosu, aby wykonać polecenie jako www-data
     gosu www-data composer install --prefer-dist --no-interaction
 fi
 
@@ -28,19 +39,5 @@ until nc -z $DB_HOST $DB_PORT; do
 done
 echo "Baza danych jest dostępna."
 
-
-# 2. Uruchomienie migracji i czyszczenie cache
-# Wykonujemy to jako www-data, używając gosu
-if [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "prod" ]; then
-    echo "Inicjalizacja i migracja bazy danych..."
-    gosu www-data bin/console doctrine:database:create --if-not-exists --no-interaction
-    gosu www-data bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-    
-    echo "Czyszczenie i przebudowa cache..."
-    # Cache trafi do /tmp zgodnie z SYMFONY_CACHE_DIR
-    gosu www-data bin/console cache:clear --env=$APP_ENV
-    gosu www-data bin/console cache:warmup --env=$APP_ENV
-fi
-
-# 3. Przekazanie kontroli do głównego procesu
+# 3. Przekazanie kontroli do głównego procesu (czyli php-fpm)
 exec "$@"

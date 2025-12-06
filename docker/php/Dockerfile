@@ -5,7 +5,7 @@ ARG PHP_VERSION=8.4
 # Używamy standardowego obrazu php-fpm
 FROM php:${PHP_VERSION}-fpm-alpine
 
-# 1. Instalacja zależności systemowych i rozszerzeń PHP
+# Instalacja zależności systemowych i rozszerzeń PHP
 RUN apk update && apk add --no-cache \
     git \
     unzip \
@@ -23,25 +23,30 @@ RUN apk update && apk add --no-cache \
     # Narzędzia do czyszczenia
     && rm -rf /var/cache/apk/*
 
-# 2. Instalacja rozszerzeń PHP
+# Instalacja rozszerzeń PHP
 RUN docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     zip \
     intl \
     opcache
 
-# 3. Instalacja Composera globalnie
+# Dodanie własnej konfiguracji PHP-FPM
+COPY zz-custom.conf /usr/local/etc/php-fpm.d/
+
+# Instalacja Composera globalnie
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# 4. Ustawienie uprawnień i katalogu roboczego
+# Konfiguracja npm: ustawiamy katalog domowy i cache na /tmp/.npm
+ENV HOME=/var/www/symfony
+ENV NPM_CONFIG_CACHE=/tmp/.npm
+RUN apk add --no-cache nodejs npm
+
+# Ustawienie uprawnień i katalogu roboczego
 WORKDIR /var/www/symfony
 
 # KLUCZOWE: Kopiowanie entrypoint z tego samego katalogu (docker/php)
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Domyślny użytkownik PHP-FPM to 'www-data' (UID 82)
-USER www-data
 
 # Domyślne polecenie startowe zostanie nadpisane przez entrypoint.sh
 CMD ["php-fpm"]
