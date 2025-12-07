@@ -4,33 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}ToDo{% endblock %}</title>
-    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+    {{ encore_entry_link_tags('app') }}
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+<body class="bg-light text-dark min-vh-100 d-flex flex-column">
 
-    <!-- Navbar -->
-    <header class="bg-blue-700 text-white shadow">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold">📝 ToDo</h1>
-            <nav class="space-x-6">
-                <a href="{{ path('task_index') }}" class="hover:underline">Lista</a>
-                <a href="{{ path('task_new') }}" class="hover:underline">Dodaj</a>
-            </nav>
+<header class="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" href="#">📝 ToDo</a>
+        <div class="d-flex ms-auto gap-3">
+            <!-- Lista -->
+            <a href="{{ path('task_index') }}" 
+               class="btn btn-outline-secondary d-flex align-items-center">
+                <i class="bi bi-list-check me-2"></i>
+                <span>Lista</span>
+            </a>
+            <!-- Dodaj -->
+            <a href="{{ path('task_new') }}" 
+               class="btn btn-outline-secondary d-flex align-items-center">
+                <i class="bi bi-plus-square-fill me-2"></i>
+                <span>Dodaj</span>
+            </a>
         </div>
-    </header>
+    </div>
+</header>
 
-    <!-- Main -->
-    <main class="flex-1 container mx-auto px-6 py-8 flex gap-8">
-        <!-- Content -->
-        <section class="flex-1">
-            {% block body %}{% endblock %}
-        </section>
-    </main>
+<main class="flex-grow-1 container py-4">
+    {% block body %}{% endblock %}
+</main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-200 text-gray-600 text-center py-4">
-        <p>&copy; {{ "now"|date("Y") }} ToDo App – Symfony + Tailwind</p>
-    </footer>
+<footer class="bg-light text-muted text-center py-4 border-top">
+    <p>&copy; {{ "now"|date("Y") }} ToDo App – Symfony + Bootstrap</p>
+</footer>
 
+{{ encore_entry_script_tags('app') }}
 </body>
 </html>

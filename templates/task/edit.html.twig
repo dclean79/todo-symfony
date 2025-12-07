@@ -1,33 +1,40 @@
 {% extends 'base.html.twig' %}
 {% block title %}Edytuj zadanie{% endblock %}
+
 {% block body %}
-<h1 class="text-xl font-semibold mb-4">Edytuj zadanie</h1>
-<div class="bg-white shadow rounded p-6">
-    {{ form_start(form) }}
-        <div class="mb-4">
-            {{ form_label(form.title) }}
-            {{ form_widget(form.title, {attr: {class: 'mt-1 block w-full border rounded p-2'}}) }}
+<h1 class="h4 fw-semibold mb-4">Edytuj zadanie</h1>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        {{ form_start(form) }}
+        
+        <div class="mb-3">
+            {{ form_label(form.title, null, {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.title, {attr: {class: 'form-control'}}) }}
             {{ form_errors(form.title) }}
         </div>
 
-        <div class="mb-4">
-            {{ form_label(form.description) }}
-            {{ form_widget(form.description, {attr: {class: 'mt-1 block w-full border rounded p-2'}}) }}
+        <div class="mb-3">
+            {{ form_label(form.description, null, {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.description, {attr: {class: 'form-control'}}) }}
             {{ form_errors(form.description) }}
         </div>
 
-        <div class="mb-4">
-            {{ form_label(form.dueAt) }}
-            {{ form_widget(form.dueAt, {attr: {class: 'mt-1 block w-full border rounded p-2'}}) }}
+        <div class="mb-3">
+            {{ form_label(form.dueAt, null, {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(form.dueAt, {attr: {class: 'form-control'}}) }}
             {{ form_errors(form.dueAt) }}
         </div>
 
-        <div class="mb-4 flex items-center gap-2">
-            {{ form_widget(form.isDone) }}
-            {{ form_label(form.isDone) }}
+        <div class="form-check mb-3">
+            {{ form_widget(form.isDone, {attr: {class: 'form-check-input'}}) }}
+            {{ form_label(form.isDone, null, {'label_attr': {'class': 'form-check-label'}}) }}
+            {{ form_errors(form.isDone) }}
         </div>
 
-        <button class="px-4 py-2 bg-blue-600 text-white rounded">Zapisz</button>
-    {{ form_end(form) }}
+        <button class="btn btn-primary">Zapisz</button>
+        
+        {{ form_end(form) }}
+    </div>
 </div>
 {% endblock %}

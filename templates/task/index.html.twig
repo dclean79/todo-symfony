@@ -2,36 +2,70 @@
 {% block title %}Lista zadań{% endblock %}
 
 {% block body %}
-<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+<div class="container my-4">
     {% for task in tasks %}
-        <div class="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition">
-            <h2 class="text-lg font-semibold {{ task.isDone ? 'line-through text-gray-400' : 'text-gray-800' }}">
-                {{ task.title }}
-            </h2>
-            {% if task.description %}
-                <p class="text-sm text-gray-600 mt-2">{{ task.description }}</p>
-            {% endif %}
-            {% if task.dueAt %}
-                <p class="text-xs text-gray-500 mt-2">📅 Termin: {{ task.dueAt|date('Y-m-d H:i') }}</p>
-            {% endif %}
+        <div class="card shadow-sm mb-3 w-100">
+            <div class="card-body">
+                <div class="row align-items-start">
+                    <!-- Checkbox -->
+                    <div class="col-auto">
+                        <form action="{{ path('task_toggle', {id: task.id}) }}" method="post">
+                            <input type="checkbox" class="form-check-input toggle-task"
+                                data-task-id="{{ task.id }}"
+                                {% if task.isDone %}checked{% endif %}>
+                        </form>
+                    </div>
 
-            <div class="flex gap-2 mt-4">
-                <form action="{{ path('task_toggle', {id: task.id}) }}" method="post">
-                    <button class="btn {{ task.isDone ? 'btn-warning' : 'btn-success' }}">
-                        {{ task.isDone ? 'Przywróć' : 'Zakończ' }}
-                    </button>
-                </form>
-                <a href="{{ path('task_edit', {id: task.id}) }}" class="btn btn-primary">Edytuj</a>
-                <form action="{{ path('task_delete', {id: task.id}) }}" method="post" onsubmit="return confirm('Usunąć zadanie?')">
-                    <button class="btn btn-danger">Usuń</button>
-                </form>
+                    <!-- Tytuł -->
+                    <div class="col-8">
+                        <h2 class="h5 mb-0 task-title {{ task.isDone ? 'text-decoration-line-through text-muted' : '' }}">
+                            {{ task.title }}
+                        </h2>
+                        {% if task.description %}
+                            <p class="small text-muted mt-2">{{ task.description }}</p>
+                        {% endif %}
+                        {% if task.dueAt %}
+                            <p class="small text-secondary mt-1">📅 Termin: {{ task.dueAt|date('Y-m-d H:i') }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Ikony edycji/usuwania po prawej -->
+                    <div class="col-auto ms-auto d-flex align-items-start">
+                        <a href="{{ path('task_edit', {id: task.id}) }}" 
+                        class="btn btn-light border border-secondary rounded px-3 me-2">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <form action="{{ path('task_delete', {id: task.id}) }}" method="post"
+                            onsubmit="return confirm('Usunąć zadanie?')">
+                            <button class="btn btn-light border border-secondary rounded px-3 text-danger">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     {% else %}
-        <div class="col-span-3 text-center text-gray-500 py-12">
-            <p class="text-lg">Brak zadań</p>
-            <p class="text-sm mt-2">Kliknij „Dodaj”, aby utworzyć pierwsze.</p>
+        <div class="text-center text-muted py-5">
+            <p class="h5">Brak zadań</p>
+            <p class="small mt-2">Kliknij „Dodaj”, aby utworzyć pierwsze.</p>
         </div>
     {% endfor %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.toggle-task').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const title = this.closest('.row').querySelector('.task-title');
+            if (this.checked) {
+                title.classList.add('text-decoration-line-through', 'text-muted');
+            } else {
+                title.classList.remove('text-decoration-line-through', 'text-muted');
+            }
+            this.form.submit(); // wysyła formularz, żeby zmienić status w bazie
+        });
+    });
+});
+</script>
 {% endblock %}
