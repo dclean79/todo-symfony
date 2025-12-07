@@ -1,5 +1,7 @@
 # 📝 ToDo App – Symfony 7 + Docker + Bootstrap
 
+![alt text](image.png)
+
 Projekt demonstracyjny aplikacji ToDo zbudowany w oparciu o **Symfony 7**
 
 - **Docker Compose**

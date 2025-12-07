@@ -52,20 +52,4 @@
         </div>
     {% endfor %}
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.toggle-task').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const title = this.closest('.row').querySelector('.task-title');
-            if (this.checked) {
-                title.classList.add('text-decoration-line-through', 'text-muted');
-            } else {
-                title.classList.remove('text-decoration-line-through', 'text-muted');
-            }
-            this.form.submit(); // wysyła formularz, żeby zmienić status w bazie
-        });
-    });
-});
-</script>
 {% endblock %}

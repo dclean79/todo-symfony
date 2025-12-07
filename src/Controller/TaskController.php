@@ -57,7 +57,12 @@ final class TaskController extends AbstractController
         $task->setIsDone(!$task->isDone());
         $task->setUpdatedAt(new \DateTimeImmutable());
         $em->flush();
-        return $this->redirectToRoute('task_index');
+
+        return $this->json([
+            'success' => true,
+            'isDone' => $task->isDone(),
+            'id' => $task->getId(),
+        ]);
     }
 
     #[Route('/{id}', name: 'task_delete', methods: ['POST'])]
